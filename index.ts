@@ -553,23 +553,36 @@ class ServerlessCustomDomain {
                 ${this.serverless.service.provider.apiGateway.restApiId}.`);
             return this.serverless.service.provider.apiGateway.restApiId;
         }
-        const stackName = this.serverless.service.provider.stackName ||
+        const stackFamilyName = this.serverless.service.provider.stackName ||
             `${this.serverless.service.service}-${this.stage}`;
-        const params = {
-            LogicalResourceId: "ApiGatewayRestApi",
-            StackName: stackName,
-        };
-
-        let response;
+        let familyStackNames;
         try {
-            response = await this.cloudformation.describeStackResource(params).promise();
+            const describeStacksResponse = await this.cloudformation.describeStacks().promise();
+            familyStackNames = describeStacksResponse.Stacks
+              .map((stack) => stack.StackName)
+              .filter((stackName) => stackName.includes(stackFamilyName));
         } catch (err) {
-            this.logIfDebug(err);
-            throw new Error(`Error: Failed to find CloudFormation resources for ${this.givenDomainName}\n`);
+            throw new Error("Error: Retrieving CloudFormation stacks.\n");
+        }
+        let response;
+        for (const familyStackName of familyStackNames) {
+            try {
+                response = await this.cloudformation.describeStackResource({
+                    LogicalResourceId: "ApiGatewayRestApi",
+                    StackName: familyStackName,
+                }).promise();
+                break;
+            } catch (err) {
+                this.logIfDebug(err);
+                this.serverless.cli.log(`Error: Failed to find CloudFormation resources for ${familyStackName}\n`);
+            }
+        }
+        if (!response) {
+            throw new Error(`Error: Failed to find a stack ${stackFamilyName}\n`);
         }
         const restApiId = response.StackResourceDetail.PhysicalResourceId;
         if (!restApiId) {
-            throw new Error(`Error: No RestApiId associated with CloudFormation stack ${stackName}`);
+            throw new Error(`Error: No RestApiId associated with CloudFormation stack ${stackFamilyName}\n`);
         }
         return restApiId;
     }
