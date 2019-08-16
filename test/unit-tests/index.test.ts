@@ -460,7 +460,7 @@ describe("Custom Domain Plugin", () => {
 
   describe("Gets Rest API correctly", () => {
     it("Fetches restApiId correctly when no ApiGateway specified", async () => {
-      AWS.mock("CloudFormation", "describeStacks", (callback) => {
+      AWS.mock("CloudFormation", "describeStacks", (params, callback) => {
         callback(null, {
           Stacks: [
             {
@@ -634,7 +634,7 @@ describe("Custom Domain Plugin", () => {
       AWS.mock("APIGateway", "createBasePathMapping", (params, callback) => {
         callback(null, params);
       });
-      AWS.mock("CloudFormation", "describeStacks", (callback) => {
+      AWS.mock("CloudFormation", "describeStacks", (params, callback) => {
         callback(null, {
           Stacks: [
             {
