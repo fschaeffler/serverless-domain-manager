@@ -554,15 +554,26 @@ class ServerlessCustomDomain {
         }
         const stackFamilyName = this.serverless.service.provider.stackName ||
             `${this.serverless.service.service}-${this.stage}`;
-        let familyStackNames;
-        try {
-            const describeStacksResponse = await this.cloudformation.describeStacks().promise();
-            familyStackNames = describeStacksResponse.Stacks
-              .map((stack) => stack.StackName)
-              .filter((stackName) => stackName.includes(stackFamilyName));
-        } catch (err) {
-            throw new Error("Error: Retrieving CloudFormation stacks.\n");
+        const allStackDescriptions = [];
+        let nextToken = true;
+        while (nextToken) {
+          try {
+              const params = { NextToken: undefined };
+              if (typeof nextToken === "string") {
+                params.NextToken = nextToken;
+              }
+              const describeStacksResponse = await this.cloudformation.describeStacks(params).promise();
+              for (const stackDescription of describeStacksResponse.Stacks) {
+                  allStackDescriptions.push(stackDescription);
+              }
+              nextToken = describeStacksResponse.NextToken;
+          } catch (err) {
+              throw new Error("Error: Retrieving CloudFormation stacks.\n");
+          }
         }
+        const familyStackNames = allStackDescriptions
+            .map((stack) => stack.StackName)
+            .filter((stackName) => stackName.includes(stackFamilyName));
         let response;
         for (const familyStackName of familyStackNames) {
             try {
