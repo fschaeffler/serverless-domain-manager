@@ -1,3 +1,5 @@
+**WARNING: This is a fork of the `serverless-domain-manager` in order to fix issues with nested CloudFormation stacks. This is only a temporary solution.**
+
 # serverless-domain-manager
 [![serverless](http://public.serverless.com/badges/v3.svg)](http://www.serverless.com)
 [![Build Status](https://travis-ci.org/amplify-education/serverless-domain-manager.svg?branch=master)](https://travis-ci.org/amplify-education/serverless-domain-manager)
